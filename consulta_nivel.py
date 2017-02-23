@@ -36,11 +36,11 @@ SELECT cliente, fecha, hora, (NI-1282)*-1 FROM datos WHERE cliente=99 AND fecha 
 '''
 
 
-def ejecutar_consulta_sql(sentencia):
+def ejecutar_consulta_sql(sentencia, host, usuario, clave, bd):
     """
     Esta función toma una sentencia sql y devuelve una tupa con los registros.
     """
-    db = MySQLdb.connect(host="192.168.1.74", user="siata_Calidad", passwd="si@t@64512_calidad", db="siata");
+    db = MySQLdb.connect(host=host, user=usuario, passwd=clave, db=bd);
     cursor = db.cursor()
     cursor.execute(sentencia)
     nivel_ = cursor.fetchall()
