@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 import MySQLdb
 import pandas as pd
-import datetime as dt
-import numpy as np
 import matplotlib.pyplot as plt
 
 # para una sola estación
@@ -38,18 +36,44 @@ SELECT cliente, fecha, hora, (NI-1282)*-1 FROM datos WHERE cliente=99 AND fecha 
 
 def ejecutar_consulta_sql(sentencia, host, usuario, clave, bd):
     """
-    Esta función toma una sentencia sql y devuelve una tupa con los registros.
+    Esta función toma una sentencia sql y los parametros de conexión a la bd y devuelve una tupa con los registros.
     """
     db = MySQLdb.connect(host=host, user=usuario, passwd=clave, db=bd);
     cursor = db.cursor()
     cursor.execute(sentencia)
-    nivel_ = cursor.fetchall()
+    nivel_resultado = cursor.fetchall()
     # Cerrar el cursor
     cursor.close()
     # Cerrar la conexión
     db.close()
-    return nivel_
+    return nivel_resultado
 
+
+def tupla_df(resultado):
+    """
+    Esta funcion toma como parametro una tupla que es resultado de una consulta sql y la convierte en dataframe
+    :param resultado: una tupla que sale de una sentencia sql
+    :return: un dataframe con los resultados de la base de datos
+    """
+    # Se crean listas vacias, una por cada columna de la tabla
+    cliente = []
+    fecha = []
+    hora = []
+    fecha_completa = []
+    niveles = []
+    # luego se recorre la tupla y se van llenando las listas correspondientes.
+    for i in range(len(resultado)):
+        cliente.append(resultado[i][0])
+        fecha.append(resultado[i][1])
+        hora.append(resultado[i][2])
+        fecha_completa.append(resultado[i][3])
+        niveles.append(resultado[i][4])
+
+    # Para crear el DataFrame primero se crea un diccionario
+    diccionario = {'cliente': cliente, 'fecha': fecha_completa, 'nivel': nivel}
+    df = pd.DataFrame(diccionario)
+    # print(dataframe)
+    return df
 
 # consulta para saber el tipo de estacion si funciona con Pr ó Ni y el offset de la estación.
 sentencia_tipo = "SELECT offsetN, N, N2, codigo FROM estaciones WHERE codigo = " + str(Estacion) + ";"
@@ -67,32 +91,9 @@ sentencia_nivel = "SELECT cliente, fecha, hora, DATE_FORMAT(CONCAT(fecha, ' ', h
                   "cliente = {} AND fecha BETWEEN '2016-12-21' AND '2016-12-22';".format(str(offsetn), str(Estacion))
 
 # se ejecuta la sentencia de nivel y se guarda la tupla de tuplas en un variable que llamamos resultado.
-resultado = ejecutar_consulta_sql(sentencia_nivel)
-print(type(resultado))
-
-# Pasar la tupla (que es una tupla de tuplas) a una lista
-
-# Se crean listas vacias, una por cada columna de la tabla
-# luego se recorre la tupla y se van llenando las listas correspondientes.
-cliente = []
-fecha = []
-hora = []
-fecha_completa = []
-nivel = []
-
-for i in range(len(resultado)):
-    cliente.append(resultado[i][0])
-    fecha.append(resultado[i][1])
-    hora.append(resultado[i][2])
-    fecha_completa.append(resultado[i][3])
-    nivel.append(resultado[i][4])
-
-# Para crear el DataFrame primero se crea un diccionario
-
-diccionario = {'cliente': cliente, 'fecha': fecha_completa, 'nivel': nivel}
-dataframe = pd.DataFrame(diccionario)
-print(dataframe)
-
+nivel = ejecutar_consulta_sql(sentencia_nivel)
+# se crea el dataframe con los resultados de la bd
+dataframe = tupla_df(nivel)
 dataframe['fecha'] = pd.to_datetime(dataframe['fecha'])
 fechas = dataframe['fecha'].values
 
